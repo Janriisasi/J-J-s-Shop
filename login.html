@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Login Page</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+			font-family: 'Arial', sans-serif;
+		}
+
+		body {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			height: 100vh;
+			background-size: cover;
+			background-position: center;
+			background-repeat: no-repeat;
+			background-attachment: fixed;
+		}
+
+		.login-container {
+			background-color: white;
+			padding: 2rem;
+			width: 350px;
+			box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+			border-radius: 10px;
+			text-align: center;
+		}
+
+		h2 {
+			color: #333;
+			margin-bottom: 1.5rem;
+			font-size: 1.5rem;
+		}
+
+		label {
+			color: #555;
+			font-size: 0.9rem;
+			margin-bottom: 0.5rem;
+			display: inline-block;
+		}
+
+		input[type="text"], input[type="password"] {
+			width: 100%;
+			padding: 10px;
+			margin-bottom: 1.2rem;
+			border: 1px solid #ddd;
+			border-radius: 5px;
+			font-size: 1rem;
+		}
+
+		input[type="submit"] {
+			width: 100%;
+			padding: 10px;
+			background-color: #28a745;
+			color: white;
+			font-size: 1rem;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			transition: background-color 0.3s ease;
+		}
+
+		input[type="submit"]:hover {
+			background-color: #218838;
+		}
+
+		@media (max-width: 400px) {
+			.login-container {
+				width: 90%;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="login-container">
+		<h2>Log-in Form</h2>
+		<form action="login.php" method="post">
+			<label for="uName">Username</label><br>
+			<input type="text" id="uName" name="uName" required><br><br>
+
+			<label for="pWord">Password</label><br>
+			<input type="password" id="pWord" name="pWord" required><br><br>
+
+			<input type="submit" value="Log-in"><br><br>
+		</form>
+	</div>
+</body>
+</html>
