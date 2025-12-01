@@ -1,12 +1,22 @@
 <?php
+session_start();
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.html");
+    exit();
+}
+
 $servername = "localhost";
 $username = "root";
 $password = "";
 $database = "cart";
 $conn = new mysqli($servername, $username, $password, $database);
-if ($conn-> connect_error){
+
+if ($conn->connect_error){
     die ("Connection Failed: " . $conn->connect_error);
 }
+
+$user_id = $_SESSION['user_id'];
 ?>
 
 <!DOCTYPE html>
@@ -11363,84 +11373,86 @@ section#contact form#contactForm :-ms-input-placeholder {
 <body>
 
 <!-- Navigation-->
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <div class="container px-4 px-lg-5">
-                <a class="navbar-brand" href="#!">J&J'S Store</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
-                        <li class="nav-item"><a class="nav-link active" aria-current="page" href="home.html">Home</a></li>
-                        <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
-                        <li class="nav-item"><a class="nav-link active" aria-current="page" href="profile.php">Profile</a></li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-        <!-- Header-->
-        <header class="bg-dark py-5">
-            <div class="container px-4 px-lg-5 my-5">
-                <div class="text-center text-white">
-                    <h1 class="display-4 fw-bolder">J&J's Store</h1>
-                    <p class="lead fw-normal text-white-50 mb-0">Buy whatever you want!</p>
-                </div>
-            </div>
-        </header>
-        <!-- Section-->
-        
-    <div class="container my-5">
-        <h2>Orders</h2>
-        
-        <!-- Styled New Client button -->
-        <a class="btn btn-primary mb-3" href="crtcreate.php">New Order</a>
-        
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Product Brand</th>
-                    <th>Product Size</th>
-                    <th>Product Color</th>
-                    <th>Address</th>
-                    <th>Payment Method</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php 
-                    $sql = "SELECT * FROM product";
-                    $result = $conn->query($sql);
-                    
-                    if(!$result){
-                        die("Invalid query: " . $conn->error);
-                    }
-                    
-                    while ($row = $result->fetch_assoc()){
-                        echo "
-                        <tr>
-                            <td>{$row['id']}</td>
-                            <td>{$row['pBrand']}</td>
-                            <td>{$row['pSize']}</td>
-                            <td>{$row['pColor']}</td>
-                            <td>{$row['addr']}</td>
-                            <td>{$row['payMet']}</td>
-                            <td>
-                                <div class='action-buttons'>
-                                    <a class='btn btn-edit' href='crtedit.php?id={$row['id']}'>Edit</a>
-                                    <a class='btn btn-delete' href='crtdelete.php?id={$row['id']}'>Cancel order</a>
-                                    </form>
-                                </div>
-                            </td>
-                       </tr>
-                      ";
-                    }
-                    $conn->close();
-                ?>
-            </tbody>
-        </table>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container px-4 px-lg-5">
+        <a class="navbar-brand" href="#!">J&J'S Store</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+                <li class="nav-item"><a class="nav-link active" aria-current="page" href="home.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+                <li class="nav-item"><a class="nav-link active" aria-current="page" href="profile.php">Profile</a></li>
+            </ul>
+        </div>
     </div>
-  <!-- Footer-->
+</nav>
+<!-- Header-->
+<header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">J&J's Store</h1>
+            <p class="lead fw-normal text-white-50 mb-0">Buy whatever you want!</p>
+        </div>
+    </div>
+</header>
+<!-- Section-->
+
+<div class="container my-5">
+    <h2>My Orders</h2>
+    
+    <a class="btn btn-primary mb-3" href="crtcreate.php">New Order</a>
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Product Brand</th>
+                <th>Product Size</th>
+                <th>Product Color</th>
+                <th>Price</th>
+                <th>Address</th>
+                <th>Payment Method</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php 
+                $sql = "SELECT * FROM product WHERE user_id = $user_id";
+                $result = $conn->query($sql);
+                
+                if(!$result){
+                    die("Invalid query: " . $conn->error);
+                }
+                
+                while ($row = $result->fetch_assoc()){
+                    echo "
+                    <tr>
+                        <td>{$row['id']}</td>
+                        <td>{$row['pBrand']}</td>
+                        <td>{$row['pSize']}</td>
+                        <td>{$row['pColor']}</td>
+                        <td>$" . number_format($row['price'], 2) . "</td>
+                        <td>{$row['addr']}</td>
+                        <td>{$row['payMet']}</td>
+                        <td>
+                            <div class='action-buttons'>
+                                <a class='btn btn-sm btn-primary' href='crtedit.php?id={$row['id']}'>Edit</a>
+                                <a class='btn btn-sm btn-danger' href='crtdelete.php?id={$row['id']}'>Cancel</a>
+                            </div>
+                        </td>
+                   </tr>
+                  ";
+                }
+                $conn->close();
+            ?>
+        </tbody>
+    </table>
+</div>
+<!-- Footer-->
 <footer class="py-5 bg-dark">
-	<div class="container"><p class="m-0 text-center text-white">&copy; 2024 J&J's Store. All rights reserved. | Quality products, easier transactions, fast delivery.</p></div>
+    <div class="container"><p class="m-0 text-center text-white">&copy; 2024 J&J's Store. All rights reserved. | Quality products, easier transactions, fast delivery.</p></div>
 </footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

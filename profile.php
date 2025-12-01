@@ -1,29 +1,35 @@
 <?php
+session_start();
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.html");
+    exit();
+}
+
 $servername = "localhost";
 $username = "root";
 $password = "";
-$database = "login"; // Change to your database name if needed
+$database = "login";
 $conn = new mysqli($servername, $username, $password, $database);
 
 if ($conn->connect_error) {
     die("Connection Failed: " . $conn->connect_error);
 }
 
+$user_id = $_SESSION['user_id'];
+
 $uploadStatus = "";
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['image'])) {
-    $id = $_POST['id'];
     $imageName = $_FILES['image']['name'];
     $imageTmpName = $_FILES['image']['tmp_name'];
     $uploadDir = 'uploads/';
     $targetFile = $uploadDir . basename($imageName);
     
-    
     if (move_uploaded_file($imageTmpName, $targetFile)) {
-        $sql = "UPDATE inf SET image='$imageName' WHERE id=$id";
+        $sql = "UPDATE inf SET image='$imageName' WHERE id=$user_id";
         if ($conn->query($sql) === TRUE) {
             $uploadStatus = "<div class='alert alert-success'> Image Uploaded Successfully!</div>";
-        }
-        else {
+        } else {
             $uploadStatus = "<div class='alert alert-danger'> Error! " . $conn->error . "</div>";
         }
     } else {
@@ -31,11 +37,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['image'])) {
     }
 }
 
-$sql = "SELECT * FROM inf";
+// Get user info
+$sql = "SELECT * FROM inf WHERE id = $user_id";
 $result = $conn->query($sql);
 if (!$result) {
     die("Invalid query: " . $conn->error);
 }
+$user = $result->fetch_assoc();
+
+// Get user orders
+$conn2 = new mysqli($servername, $username, $password, "cart");
+$sql_orders = "SELECT * FROM product WHERE user_id = $user_id";
+$orders_result = $conn2->query($sql_orders);
 ?>
 
 <!DOCTYPE html>
@@ -10915,6 +10928,9 @@ textarea.form-control-lg {
             text-decoration: none;
             margin-top: 10px;
         }
+        .botn:hover {
+            color: white;
+        }
         .action-buttons {
             display: flex;
             gap: 8px;
@@ -10924,90 +10940,123 @@ textarea.form-control-lg {
         
     </style>
     </head>
-    <body>
-     <!-- Navigation-->
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <div class="container px-4 px-lg-5">
-                <a class="navbar-brand" href="#!">J&J'S Store</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
-                        <li class="nav-item"><a class="nav-link active" aria-current="page" href="home.html">Home</a></li>
-                        <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
-                        <li class="nav-item"><a class="nav-link active" aria-current="page" href="profile.php">Profile</a></li>
-                    </ul>
-                    <form class="d-flex">
-                        <button class="btn btn-outline-dark" type="button" onclick="window.location.href='cart.php';">
-                            <i class="bi-cart-fill me-1"></i>
-                            Cart
-                        </button>
+<body>
+
+<!-- Navigation-->
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container px-4 px-lg-5">
+        <a class="navbar-brand" href="#!">J&J'S Store</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+                <li class="nav-item"><a class="nav-link" href="home.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+                <li class="nav-item"><a class="nav-link active" aria-current="page" href="profile.php">Profile</a></li>
+            </ul>
+            <form class="d-flex">
+                <button class="btn btn-outline-dark me-2" type="button" onclick="window.location.href='cart.php';">
+                    <i class="bi-cart-fill me-1"></i>
+                    Cart
+                </button>
+                <button class="btn btn-outline-danger" type="button" onclick="window.location.href='logout.php';">
+                    <i class="bi-box-arrow-right me-1"></i>
+                    Logout
+                </button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<!-- Header-->
+<header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">My Profile</h1>
+            <p class="lead fw-normal text-white-50 mb-0">Welcome, <?php echo $_SESSION['full_name']; ?>!</p>
+        </div>
+    </div>
+</header>
+
+<!-- Profile Section -->
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <?php if (!empty($user['image'])): ?>
+                        <img src="uploads/<?php echo $user['image']; ?>" class="img-fluid rounded-circle mb-3" style="max-width: 200px;">
+                    <?php else: ?>
+                        <i class="bi-person-circle" style="font-size: 150px; color: #ccc;"></i>
+                    <?php endif; ?>
+                    
+                    <h4><?php echo $user['fName']; ?></h4>
+                    <p class="text-muted">@<?php echo $user['uName']; ?></p>
+                    
+                    <form method="POST" enctype="multipart/form-data" class="mt-3">
+                        <input type="file" name="image" class="form-control mb-2" accept="image/*">
+                        <button type="submit" class="btn btn-primary btn-sm">Upload Image</button>
                     </form>
+                    <?php echo $uploadStatus; ?>
                 </div>
             </div>
-        </nav>
-        <!-- Header-->
-        <header class="bg-dark py-5">
-            <div class="container px-4 px-lg-5 my-5">
-                <div class="text-center text-white">
-                    <h1 class="display-4 fw-bolder">J&J's Store</h1>
-                    <p class="lead fw-normal text-white-50 mb-0">Buy whatever you want!</p>
-                </div>
-            </div>
-        </header>
-       
-  <section>
-    <?php echo $uploadStatus; ?>
-    
-    <?php while ($row = $result->fetch_assoc()) { ?>
-        <div class="profile-card">
-            <div class="profile-image-container">
-                <?php 
-                $imagePath = 'uploads/' . ($row['image'] ?: 'default-profile.jpg');
-                echo "<img id='profile-image' src='$imagePath' alt='User Image' style='width:100px; height:100px;'>";
-                ?>
-
-                <form action="" method="POST" enctype="multipart/form-data">
-                    <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
-                    <label for="image-upload-<?php echo $row['id']; ?>" class="botn">Edit Image</label>
-                    <input type="file" id="image-upload-<?php echo $row['id']; ?>" name="image" style="display: none;" onchange="this.form.submit();">
-                </form>
-            </div>
-
-            <div class="profile-details" id="profile-form">
-                <h2>User Profile</h2>
-                
-                <label for="fName">Full Name</label>
-                <span id="fName"><?php echo htmlspecialchars($row['fName']); ?></span>
-
-                <label for="pNum">Phone Number</label>
-                <span id="pNum"><?php echo htmlspecialchars($row['pNum']); ?></span>
-
-                <label for="bDate">Birth Date</label>
-                <span id="bDate"><?php echo htmlspecialchars($row['bDate']); ?></span>
-
-                <label for="uName">Username</label>
-                <span id="uName"><?php echo htmlspecialchars($row['uName']); ?></span>
-
-                <label for="email">Email</label>
-                <span id="email"><?php echo htmlspecialchars($row['email']); ?></span>
-
-                <label for="pWord">Password</label>
-                <span id="pWord"><?php echo str_repeat('*', strlen($row['pWord'])); ?></span>
-
-                <div class="action-buttons">
-                    <a href="edtprfl.php?id=<?php echo $row['id']; ?>" class="botn" style="background: #10ab0e;">Update Profile</a>
-                    <a href="dltprfl.php?id=<?php echo $row['id']; ?>" class="botn" style="background: #f44336;">Delete</a>
+            
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5>Profile Information</h5>
+                    <p><strong>Email:</strong> <?php echo $user['email']; ?></p>
+                    <p><strong>Phone:</strong> <?php echo $user['pNum']; ?></p>
+                    <p><strong>Birthdate:</strong> <?php echo $user['bDate']; ?></p>
+                    <a href="edtprfl.php?id=<?php echo $user['id']; ?>" class="btn btn-primary btn-sm">Edit Profile</a>
                 </div>
             </div>
         </div>
-    <?php } ?>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h3>My Orders</h3>
+                    
+                    <?php if ($orders_result && $orders_result->num_rows > 0): ?>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Product</th>
+                                    <th>Size</th>
+                                    <th>Color</th>
+                                    <th>Price</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php while ($order = $orders_result->fetch_assoc()): ?>
+                                    <tr>
+                                        <td>#<?php echo $order['id']; ?></td>
+                                        <td><?php echo $order['pBrand']; ?></td>
+                                        <td><?php echo $order['pSize']; ?></td>
+                                        <td><?php echo $order['pColor']; ?></td>
+                                        <td>$<?php echo number_format($order['price'], 2); ?></td>
+                                        <td><span class="badge bg-warning">Pending</span></td>
+                                    </tr>
+                                <?php endwhile; ?>
+                            </tbody>
+                        </table>
+                        <a href="cart.php" class="btn btn-primary">View All Orders</a>
+                    <?php else: ?>
+                        <p class="text-muted">You haven't placed any orders yet.</p>
+                        <a href="home.html" class="btn btn-primary">Start Shopping</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-    <?php $conn->close(); ?>
-</section>
-
-    <!-- Footer-->
+<!-- Footer-->
 <footer class="py-5 bg-dark">
-	<div class="container"><p class="m-0 text-center text-white">&copy; 2024 J&J's Store. All rights reserved. | Quality products, easier transactions, fast delivery.</p></div>
+    <div class="container"><p class="m-0 text-center text-white">&copy; 2024 J&J's Store. All rights reserved. | Quality products, easier transactions, fast delivery.</p></div>
 </footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
